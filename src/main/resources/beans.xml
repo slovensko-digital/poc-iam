@@ -1,7 +1,6 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:jaxws="http://cxf.apache.org/jaxws"
-       xmlns:sts="http://cxf.apache.org/sts"
        xsi:schemaLocation="
             http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
             http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd">
@@ -16,6 +15,11 @@
                 <bean class="org.apache.cxf.sts.token.provider.SAMLTokenProvider" />
             </list>
         </property>
+        <property name="services">
+            <list>
+                <ref bean="eksService" />
+            </list>
+        </property>
         <property name="stsProperties" ref="stsProperties" />
     </bean>
 
@@ -23,6 +27,14 @@
         <property name="signatureCryptoProperties" value="stsstore.properties" />
         <property name="signatureUsername" value="stskey" />
         <property name="issuer" value="DigitalSlovenskoSTS" />
+    </bean>
+
+    <bean id="eksService" class="org.apache.cxf.sts.service.StaticService">
+        <property name="endpoints">
+            <list>
+                <value>https://eschranka.upvsfixnew.gov.sk/EKSService.svc</value>
+            </list>
+        </property>
     </bean>
 
     <jaxws:endpoint id="stsEndpoint"
@@ -33,8 +45,9 @@
             <bean class="org.apache.cxf.ws.security.wss4j.WSS4JInInterceptor">
                 <constructor-arg>
                     <map>
-                        <entry key="action" value="Signature" />
+                        <entry key="action" value="Signature Timestamp" />
                         <entry key="signaturePropFile" value="stsstore.properties" />
+                        <entry key="isBSPCompliant" value="false" />
                     </map>
                 </constructor-arg>
             </bean>
