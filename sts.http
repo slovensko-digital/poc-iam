@@ -1,0 +1,7 @@
+# curl -XPOST http://localhost:8080/services/STS -d @sts-request-new.xml
+POST http://localhost:8080/services/STS
+Content-Type: application/x-www-form-urlencoded
+
+< sts-request-new.xml
+
+###
