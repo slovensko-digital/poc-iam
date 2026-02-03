@@ -5,6 +5,7 @@ import org.apache.wss4j.common.crypto.PasswordEncryptor;
 import org.apache.wss4j.common.ext.WSSecurityException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.security.MessageDigest;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Properties;
