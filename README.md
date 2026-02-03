@@ -2,7 +2,7 @@
 
 Ukážková implementácia IAM STS postavená na kvalitných a overených open-source riešeniach kompatibilná s aktuálnou IAM system-to-system integráciou (SAML 2.0) na portáli ÚPVS (slovensko.sk)
 
-- Technický popis s odôvodnením: [Stratégia odľahčenia IAM - Dedikovaný STS pre
+Technický popis s odôvodnením: [Stratégia odľahčenia IAM - Dedikovaný STS pre
 integrácie](https://platforma-slovensko-digital-uploads.s3.dualstack.eu-central-1.amazonaws.com/original/2X/5/521e5c6ce004beecff97012fac8cc53f58cb2754.pdf)
 
 ## Hlavné funkcie
