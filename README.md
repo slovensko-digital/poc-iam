@@ -15,8 +15,6 @@ Ukážková implementácia IAM STS postavená na kvalitných a overených open-s
 - **Java**
 - **Spring Boot** - aplikačný framework
 - **Apache CXF** - WS-Trust a WS-Security implementácia
-- **OpenSAML** - SAML assertion handling
-- **Apache WSS4J** - WS-Security procesovanie
 - **Redis** - allowlist certifikátov (serial number)
 - **Maven** - build nástroj
 - **Docker** - kontajnerizácia
@@ -46,69 +44,46 @@ mvn spring-boot:run
 
 ```bash
 # Spustenie s Redis
- docker-compose up
+ docker compose up
 
 # Zastavenie
- docker-compose down
+ docker compose down
 
-# Zastavenie s vymazaním dát
- docker-compose down -v
+
+## Testovacia ukážka
+
+1. Spustenie služby 
+```
+docker compose up
+```
+2. Povolenie klúča so serial number, ktorý je v ukážkovom requeste.  
+```
+docker exec -it sts-redis redis-cli SET cert:serial:9379126337400755137 "1"
 ```
 
-## Testovanie
-
-### cURL
-
+3. Test request na STS službu
 ```bash
 curl -X POST http://localhost:8080/services/STS -d @sts-request.xml
 ```
 
-## Redis Integrácia
-
-Certifikáty sa overujú cez sériové číslo uložené v Redise. Len registrované certifikáty sú akceptované.
-
-### Registrácia certifikátu
-
-1. **Získanie sériového čísla certifikátu:**
-   ```bash
-   openssl x509 -in cert.pem -noout -serial | cut -d= -f2
-   ```
-
-2. **Registrácia v Redise:**
-   ```bash
-   docker exec -it sts-redis redis-cli SET cert:serial:<SERIAL> "enabled"
-   
-    # Príklad (serial z ukážkového requestu):
-    docker exec -it sts-redis redis-cli SET cert:serial:9379126337400755137 "enabled"
-   ```
-
-3. **Kontrola registrovaných certifikátov:**
-   ```bash
-   # Zobrazenie všetkých registrovaných certifikátov
-   docker exec -it sts-redis redis-cli KEYS 'cert:serial:*'
-   
-   # Kontrola konkrétneho certifikátu
-   docker exec -it sts-redis redis-cli GET cert:serial:<SERIAL>
-   ```
-
-4. **Odstránenie certifikátu:**
-   ```bash
-   docker exec -it sts-redis redis-cli DEL cert:serial:<SERIAL>
-   ```
+4. Zmazanie certifikátu z Redis
+```bash
+docker exec -it sts-redis redis-cli DEL cert:serial:9379126337400755137
+```
 
 ## Bezpečnostné upozornenia
 
-⚠️ **Toto je Proof of Concept - NIE JE VHODNÉ PRE PRODUKCIU:**
+⚠️ **Toto je Proof of Concept:**
 
 1. **Hardcoded heslá** - Keystore password je "changeit"
 2. **Timestamp strictness** - Vypnuté pre debugovanie (TIMESTAMP_STRICT=false)
-3. **Hardcoded dáta** - SAML atribúty obsahujú testovacie dáta (TODO: nahradiť LDAP/Redis integráciou)
+3. **Hardcoded dáta** - SAML atribúty obsahujú testovacie dáta
 4. **Replay cache** - Aktuálna implementácia nie je vhodná pre multi-instance nasadenie
 
-## TODO
+## TODOs
 
 - [ ] Zmeniť hardcoded keystore password
-- [ ] Implementovať LDAP/Redis integráciu pre reálne používateľské dáta
+- [ ] Implementovať LDAP/Redis integráciu pre reálne dáta
 - [ ] Redizajn replay cache pre multi-instance scaling
 - [ ] Povoliť TIMESTAMP_STRICT v produkcii
 
