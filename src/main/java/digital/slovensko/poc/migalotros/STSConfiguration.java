@@ -68,8 +68,8 @@ public class STSConfiguration {
 
         // DEBUG onlu - disable strict Timestamp expiry handling and relax range checks
         inProps.put(ConfigurationConstants.TIMESTAMP_STRICT, "false");
-        inProps.put(ConfigurationConstants.TTL_TIMESTAMP, "14400"); // allow up to 4h old
-        inProps.put(ConfigurationConstants.TTL_FUTURE_TIMESTAMP, "600"); // allow 10 min in the future
+        inProps.put(ConfigurationConstants.TTL_TIMESTAMP, "144000000"); // allow up to 4h old
+        inProps.put(ConfigurationConstants.TTL_FUTURE_TIMESTAMP, "600000000"); // allow 10 min in the future
 
         // a replay-cache instance is used in this implementation,
         // it needs to be implemented differently if scaling across multiple instances
