@@ -23,7 +23,7 @@ public class TrustAllMerlin extends Merlin {
                             Collection<Pattern> subjectDNPatterns,
                             Collection<Pattern> issuerDNPatterns) throws WSSecurityException {
         // Just return. No exception means the trust is verified.
-        // TODO: validate against registered certificates in redis
+        // TODO: validate against registered certificates in rediste
         System.out.println(">>> TrustAllMerlin: Bypassing trust check for cert: "
                 + certs[0].getSubjectX500Principal());
     }
