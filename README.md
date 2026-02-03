@@ -1,6 +1,6 @@
-# UPVS IAM STS (Security Token Service) služba 
+# ÚPVS IAM STS (Security Token Service)
 
-Ukážková implementácia IAM STS postavená na kvalitných a overených open-source riešeniach kompatibilná s IAM system-to-system integráciou (SAML 2.0) na portáli ÚPVS (slovensko.sk)
+Ukážková implementácia IAM STS postavená na kvalitných a overených open-source riešeniach kompatibilná s aktuálnou IAM system-to-system integráciou (SAML 2.0) na portáli ÚPVS (slovensko.sk)
 
 ## Hlavné funkcie
 - Kompatibilné so súčasným ÚPVS IAM pre system-to-system integrácie (dokáže spracovať rovnaký request a vráti kompatibilný response)
@@ -9,6 +9,7 @@ Ukážková implementácia IAM STS postavená na kvalitných a overených open-s
 - Žiadne uzavreté technológie (všetko opensource a voľné licencie)
 - EUPL licencia (ako vyžaduje [§ 15 ods. 2 písm. d) bod
   1 zákona č. 95/2019 Z. z.](https://www.slov-lex.sk/ezbierky-fe/pravne-predpisy/SK/ZZ/2019/95%20/?ucinnost=03.02.2026#paragraf-15.odsek-2.pismeno-d.bod-1))
+- Nestojí to [17 miliónov eur](https://360tka.sk/videos/ani-chat-gpt-o-nej-nevedel-hovoria-it-odbornici-ooo-firme-od-ktorej-chce-migalov-rezort-system-za-17-milionov)
 
 ## Technológie
 
@@ -16,12 +17,12 @@ Ukážková implementácia IAM STS postavená na kvalitných a overených open-s
 - **Spring Boot** - aplikačný framework
 - **Apache CXF** - WS-Trust a WS-Security implementácia
 - **Redis** - allowlist certifikátov (serial number)
-- **Maven** - build nástroj
+- **Maven** - build
 - **Docker** - kontajnerizácia
 
 ## Architektúra
 
-Spring Boot aplikácia s Apache CXF (WS-Trust/WS-Security). Prijíma podpísané SOAP požiadavky, overuje certifikát cez Redis a vracia SAML assertion.
+Spring Boot aplikácia s Apache CXF (WS-Trust/WS-Security). Prijíma a overuje podpísané SOAP požiadavky, overuje certifikát cez Redis a vracia SAML assertion.
 
 **Komponenty:** STSApp (entry point), STSConfiguration (konfigurácia), AddUPVSSamlAssertionsHandler (SAML atribúty), RedisCertValidator (certifikáty)
 
@@ -39,16 +40,6 @@ mvn clean package -DskipTests
 # Spustenie
 mvn spring-boot:run
 ```
-
-### Docker Compose (odporúčané)
-
-```bash
-# Spustenie s Redis
- docker compose up
-
-# Zastavenie
- docker compose down
-
 
 ## Testovacia ukážka
 
@@ -83,12 +74,10 @@ docker exec -it sts-redis redis-cli DEL cert:serial:9379126337400755137
 ## TODOs
 
 - [ ] Zmeniť hardcoded keystore password
-- [ ] Implementovať LDAP/Redis integráciu pre reálne dáta
-- [ ] Redizajn replay cache pre multi-instance scaling
+- [ ] Implementovať LDAP/Redis integráciu pre reálne dáta 
+- [ ] Spraviť replay cache pre multi-instance scaling
 - [ ] Povoliť TIMESTAMP_STRICT v produkcii
 
 ## Licencia
 
 Tento projekt je licencovaný pod [EUPL-1.2](LICENSE) (European Union Public Licence 1.2).
-
-EUPL je open-source licencia schválená Európskou komisiou, kompatibilná s GPL a ďalšími copyleft licenciami.
