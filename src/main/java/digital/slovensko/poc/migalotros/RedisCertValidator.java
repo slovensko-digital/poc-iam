@@ -1,0 +1,96 @@
+package digital.slovensko.poc.migalotros;
+
+import org.apache.wss4j.common.crypto.Merlin;
+import org.apache.wss4j.common.crypto.PasswordEncryptor;
+import org.apache.wss4j.common.ext.WSSecurityException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+
+import jakarta.annotation.PostConstruct;
+
+import java.security.MessageDigest;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Properties;
+import java.util.regex.Pattern;
+
+/**
+ * Certificate validator that verifies certificate serial numbers against a Redis allowlist.
+ * Only certificates with serial numbers registered in Redis are trusted.
+ */
+@Component
+public class RedisCertValidator extends Merlin {
+
+    private JedisPool jedisPool;
+
+    @Value("${redis.host:localhost}")
+    private String redisHost;
+
+    @Value("${redis.port:6379}")
+    private int redisPort;
+
+    @Value("${redis.timeout:2000}")
+    private int redisTimeout;
+
+    public RedisCertValidator() throws WSSecurityException, java.io.IOException {
+        super(new Properties(), null, null);
+    }
+
+    public RedisCertValidator(Properties properties, ClassLoader loader, PasswordEncryptor passwordEncryptor)
+            throws WSSecurityException, java.io.IOException {
+        super(properties, loader, passwordEncryptor);
+        String redisHost = properties.getProperty("redis.host", "localhost");
+        int redisPort = Integer.parseInt(properties.getProperty("redis.port", "6379"));
+        int redisTimeout = Integer.parseInt(properties.getProperty("redis.timeout", "2000"));
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        this.jedisPool = new JedisPool(poolConfig, redisHost, redisPort, redisTimeout);
+    }
+
+    @PostConstruct
+    public void init() {
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        this.jedisPool = new JedisPool(poolConfig, redisHost, redisPort, redisTimeout);
+    }
+
+    @Override
+    public void verifyTrust(X509Certificate[] certs, boolean enableRevocation,
+                            Collection<Pattern> subjectDNPatterns,
+                            Collection<Pattern> issuerDNPatterns) throws WSSecurityException {
+        if (certs == null || certs.length == 0) {
+            throw new WSSecurityException(WSSecurityException.ErrorCode.SECURITY_ERROR, "Certificate not provided");
+        }
+        if (certs.length != 1) {
+            throw new WSSecurityException(WSSecurityException.ErrorCode.SECURITY_ERROR, "Too many certificates provided, expected exactly one");
+        }
+
+        try {
+            X509Certificate cert = certs[0];
+            cert.checkValidity();
+            var serialNumber = cert.getSerialNumber();
+
+            try (Jedis jedis = jedisPool.getResource()) {
+                String key = "cert:serial:" + serialNumber;
+                String value = jedis.get(key);
+
+                if (value == null) {
+                    throw new WSSecurityException(
+                            WSSecurityException.ErrorCode.SECURITY_ERROR,
+                            "Certificate not registered. Serial Number: " + serialNumber
+                    );
+                }
+            }
+        } catch (WSSecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            WSSecurityException wse = new WSSecurityException(
+                    WSSecurityException.ErrorCode.SECURITY_ERROR,
+                    "Certificate verification failed: " + e.getMessage()
+            );
+            wse.initCause(e);
+            throw wse;
+        }
+    }
+}
