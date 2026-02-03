@@ -5,6 +5,7 @@ import org.apache.wss4j.common.crypto.PasswordEncryptor;
 import org.apache.wss4j.common.ext.WSSecurityException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.security.MessageDigest;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Properties;
@@ -60,18 +61,14 @@ public class RedisCertValidator extends Merlin {
             }
             String publicKeyDigest = hexString.toString();
 
-            String key = "cert:serial:" + serialNumber;
+            String key = "cert:digest:" + publicKeyDigest;
             String value = stringRedisTemplate.opsForValue().get(key);
-            try (Jedis jedis = jedisPool.getResource()) {
-                String key = "cert:digest:" + publicKeyDigest;
-                String value = jedis.get(key);
 
-                if (value == null) {
-                    throw new WSSecurityException(
-                            WSSecurityException.ErrorCode.SECURITY_ERROR,
-                            "Certificate not registered. Public Key Digest: " + publicKeyDigest
-                    );
-                }
+            if (value == null) {
+                throw new WSSecurityException(
+                        WSSecurityException.ErrorCode.SECURITY_ERROR,
+                        "Certificate not registered. Public Key Digest: " + publicKeyDigest
+                );
             }
         } catch (WSSecurityException e) {
             throw e;
