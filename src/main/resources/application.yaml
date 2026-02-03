@@ -1,0 +1,52 @@
+#debug: true
+#logging:
+#  level:
+#    org.apache.jcp.xml.dsig.internal.dom.DOMSignedInfo: DEBUG
+#    org.apache.jcp.xml.dsig.internal.dom.DOMReference: DEBUG
+
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      jedis:
+        pool:
+          enabled: true
+      connect-timeout: 10s
+      timeout: 10s
+
+cxf:
+  path: /services
+  servlet:
+    init:
+      services-list-path: /
+
+sts:
+  issuer: iamsts.upvsfix.local
+  endpoint:
+    path: /STS
+
+  signing:
+    crypto:
+      provider: digital.slovensko.poc.migalotros.RedisCertValidator
+    keystore:
+      type: jks
+      file: stsstore.jks
+      password: changeit
+    key:
+      alias: stskey
+      password: changeit
+
+  wss4j:
+    in:
+      bsp-compliant: false
+      timestamp:
+        strict: false
+      ttl: 144000000
+      ttl-future: 600000000
+    out:
+      ttl: 3600
+
+  service:
+    eks:
+      endpoint: "https://eschranka.upvsfixnew.gov.sk/EKSService.svc"
