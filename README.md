@@ -2,6 +2,9 @@
 
 Ukážková implementácia IAM STS postavená na kvalitných a overených open-source riešeniach kompatibilná s aktuálnou IAM system-to-system integráciou (SAML 2.0) na portáli ÚPVS (slovensko.sk)
 
+- Technický popis s odôvodnením: [Stratégia odľahčenia IAM - Dedikovaný STS pre
+integrácie](https://platforma-slovensko-digital-uploads.s3.dualstack.eu-central-1.amazonaws.com/original/2X/5/521e5c6ce004beecff97012fac8cc53f58cb2754.pdf)
+
 ## Hlavné funkcie
 - Kompatibilné so súčasným ÚPVS IAM pre system-to-system integrácie (dokáže spracovať rovnaký request a vráti kompatibilný response)
 - Ukážka škálovateľného úložiska pre klúče (redis)
@@ -16,7 +19,7 @@ Ukážková implementácia IAM STS postavená na kvalitných a overených open-s
 - **Java**
 - **Spring Boot** - aplikačný framework
 - **Apache CXF** - WS-Trust a WS-Security implementácia
-- **Redis** - allowlist certifikátov (serial number)
+- **Redis** - allowlist certifikátov (SHA-256 digest verejného kľúča)
 - **Maven** - build
 - **Docker** - kontajnerizácia
 
@@ -47,9 +50,9 @@ mvn spring-boot:run
 ```
 docker compose up
 ```
-2. Povolenie klúča so serial number, ktorý je v ukážkovom requeste.  
-```
-docker exec -it sts-redis redis-cli SET cert:serial:9379126337400755137 "1"
+2. Povolenie klúča so serial number, ktorý je v ukážkovom requeste `sts-request.xml`.
+```bash
+docker exec -it sts-redis redis-cli SET cert:digest:930c212a36b9c534abe5456e5e97f35653918545744eaf147d4718051210cc30 "1"
 ```
 
 3. Test request na STS službu
@@ -59,7 +62,7 @@ curl -X POST http://localhost:8080/services/STS -d @sts-request.xml
 
 4. Zmazanie certifikátu z Redis
 ```bash
-docker exec -it sts-redis redis-cli DEL cert:serial:9379126337400755137
+docker exec -it sts-redis redis-cli DEL cert:digest:930c212a36b9c534abe5456e5e97f35653918545744eaf147d4718051210cc30
 ```
 
 ## Bezpečnostné upozornenia

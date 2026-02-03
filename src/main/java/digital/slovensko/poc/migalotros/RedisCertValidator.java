@@ -11,8 +11,8 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 /**
- * Certificate validator that verifies certificate serial numbers against a Redis allowlist.
- * Only certificates with serial numbers registered in Redis are trusted.
+ * Certificate validator that verifies certificate public key digests against a Redis allowlist.
+ * Only certificates with public key digests registered in Redis are trusted.
  */
 public class RedisCertValidator extends Merlin {
 
@@ -43,15 +43,30 @@ public class RedisCertValidator extends Merlin {
         try {
             X509Certificate cert = certs[0];
             cert.checkValidity();
-            var serialNumber = cert.getSerialNumber();
 
-            String key = "cert:serial:" + serialNumber;
+            // Calculate SHA-256 digest of public key
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] publicKeyBytes = cert.getPublicKey().getEncoded();
+            byte[] digest = md.digest(publicKeyBytes);
+
+            // Convert to hex string
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : digest) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            String publicKeyDigest = hexString.toString();
+
+            String key = "cert:digest:" + publicKeyDigest;
             String value = stringRedisTemplate.opsForValue().get(key);
 
             if (value == null) {
                 throw new WSSecurityException(
                         WSSecurityException.ErrorCode.SECURITY_ERROR,
-                        "Certificate not registered. Serial Number: " + serialNumber
+                        "Certificate not registered. Public Key Digest: " + publicKeyDigest
                 );
             }
         } catch (WSSecurityException e) {
