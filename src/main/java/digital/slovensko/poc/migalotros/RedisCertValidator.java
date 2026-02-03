@@ -3,13 +3,7 @@ package digital.slovensko.poc.migalotros;
 import org.apache.wss4j.common.crypto.Merlin;
 import org.apache.wss4j.common.crypto.PasswordEncryptor;
 import org.apache.wss4j.common.ext.WSSecurityException;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
-
-import jakarta.annotation.PostConstruct;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.security.MessageDigest;
 import java.security.cert.X509Certificate;
@@ -21,38 +15,20 @@ import java.util.regex.Pattern;
  * Certificate validator that verifies certificate public key digests against a Redis allowlist.
  * Only certificates with public key digests registered in Redis are trusted.
  */
-@Component
 public class RedisCertValidator extends Merlin {
 
-    private JedisPool jedisPool;
+    public static final String REDIS_TEMPLATE_REF = "redis.bean";
 
-    @Value("${redis.host:localhost}")
-    private String redisHost;
-
-    @Value("${redis.port:6379}")
-    private int redisPort;
-
-    @Value("${redis.timeout:2000}")
-    private int redisTimeout;
+    private final StringRedisTemplate stringRedisTemplate;
 
     public RedisCertValidator() throws WSSecurityException, java.io.IOException {
-        super(new Properties(), null, null);
+        this(new Properties(), null, null);
     }
 
     public RedisCertValidator(Properties properties, ClassLoader loader, PasswordEncryptor passwordEncryptor)
             throws WSSecurityException, java.io.IOException {
         super(properties, loader, passwordEncryptor);
-        String redisHost = properties.getProperty("redis.host", "localhost");
-        int redisPort = Integer.parseInt(properties.getProperty("redis.port", "6379"));
-        int redisTimeout = Integer.parseInt(properties.getProperty("redis.timeout", "2000"));
-        JedisPoolConfig poolConfig = new JedisPoolConfig();
-        this.jedisPool = new JedisPool(poolConfig, redisHost, redisPort, redisTimeout);
-    }
-
-    @PostConstruct
-    public void init() {
-        JedisPoolConfig poolConfig = new JedisPoolConfig();
-        this.jedisPool = new JedisPool(poolConfig, redisHost, redisPort, redisTimeout);
+        this.stringRedisTemplate = (StringRedisTemplate) properties.get(REDIS_TEMPLATE_REF);
     }
 
     @Override
@@ -65,7 +41,6 @@ public class RedisCertValidator extends Merlin {
         if (certs.length != 1) {
             throw new WSSecurityException(WSSecurityException.ErrorCode.SECURITY_ERROR, "Too many certificates provided, expected exactly one");
         }
-
         try {
             X509Certificate cert = certs[0];
             cert.checkValidity();
@@ -86,16 +61,14 @@ public class RedisCertValidator extends Merlin {
             }
             String publicKeyDigest = hexString.toString();
 
-            try (Jedis jedis = jedisPool.getResource()) {
-                String key = "cert:digest:" + publicKeyDigest;
-                String value = jedis.get(key);
+            String key = "cert:digest:" + publicKeyDigest;
+            String value = stringRedisTemplate.opsForValue().get(key);
 
-                if (value == null) {
-                    throw new WSSecurityException(
-                            WSSecurityException.ErrorCode.SECURITY_ERROR,
-                            "Certificate not registered. Public Key Digest: " + publicKeyDigest
-                    );
-                }
+            if (value == null) {
+                throw new WSSecurityException(
+                        WSSecurityException.ErrorCode.SECURITY_ERROR,
+                        "Certificate not registered. Public Key Digest: " + publicKeyDigest
+                );
             }
         } catch (WSSecurityException e) {
             throw e;
